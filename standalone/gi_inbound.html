@@ -157,7 +157,7 @@
                             <label for="statZincType">锌锭种类：</label>
                             <select id="statZincType" onchange="updateStatistics()">
                                 <option value="">全部</option><option value="A">A</option><option value="B">B</option>
-                                <option value="C">C</option><option value="D">D</option>
+                                <option value="D">D</option><option value="E">E</option>
                             </select>
                         </div>
                         <div class="statistics-result">
@@ -166,15 +166,33 @@
                         </div>
                     </div>
 
-                    <!-- 日期筛选 -->
+                    <!-- 筛选区域 -->
                     <div class="filter-section">
-                        <label>日期筛选：</label>
+                        <label>筛选条件：</label>
+                        <!-- 班组和锌锭种类筛选 -->
+                        <label for="filterTeam">班组：</label>
+                        <select id="filterTeam" onchange="applyFilters()">
+                            <option value="">全部</option>
+                            <option value="甲">甲</option>
+                            <option value="乙">乙</option>
+                            <option value="丙">丙</option>
+                            <option value="丁">丁</option>
+                        </select>
+                        <label for="filterZincType">锌锭种类：</label>
+                        <select id="filterZincType" onchange="applyFilters()">
+                            <option value="">全部</option>
+                            <option value="A">A</option>
+                            <option value="B">B</option>
+                            <option value="D">D</option>
+                            <option value="E">E</option>
+                        </select>
+                        <!-- 日期筛选 -->
                         <label for="startDate">开始日期</label>
                         <input type="date" id="startDate">
                         <label for="endDate">结束日期</label>
                         <input type="date" id="endDate">
-                        <button class="filter-btn" onclick="applyDateFilter()">筛选</button>
-                        <button class="clear-filter-btn" onclick="clearDateFilter()">清除筛选</button>
+                        <button class="filter-btn" onclick="applyFilters()">筛选</button>
+                        <button class="clear-filter-btn" onclick="clearFilters()">清除筛选</button>
                         <span class="filter-result" id="filterResult"></span>
                     </div>
 
@@ -233,7 +251,7 @@
                             <label for="fieldZincType">锌锭种类</label>
                             <select id="fieldZincType" required>
                                 <option value="">请选择</option><option value="A">A</option><option value="B">B</option>
-                                <option value="C">C</option><option value="D">D</option>
+                                <option value="D">D</option><option value="E">E</option>
                             </select>
                         </div>
                     </div>
@@ -361,32 +379,77 @@
             document.getElementById('statWeight').innerHTML = `${totalWeight}<span class="unit">KG</span>`;
         }
 
-        function applyDateFilter() {
+        // 应用综合筛选（日期、班组、锌锭种类）
+        function applyFilters() {
             const startDate = document.getElementById('startDate').value;
             const endDate = document.getElementById('endDate').value;
-            if (!startDate && !endDate) { alert('请至少选择一个日期！'); return; }
+            const filterTeam = document.getElementById('filterTeam').value;
+            const filterZincType = document.getElementById('filterZincType').value;
+            
+            // 检查是否有任何筛选条件
+            const hasFilters = startDate || endDate || filterTeam || filterZincType;
+            if (!hasFilters) {
+                isFiltering = false;
+                filteredItems = [];
+                document.getElementById('filterResult').textContent = '';
+                currentPage = 1;
+                renderTable();
+                return;
+            }
+            
             isFiltering = true;
             filteredItems = items.filter(item => {
-                if (!item.D) return false;
-                const itemDate = new Date(item.D);
-                const start = startDate ? new Date(startDate) : new Date('1900-01-01');
-                const end = endDate ? new Date(endDate) : new Date('2100-12-31');
-                return itemDate >= start && itemDate <= end;
+                // 日期筛选
+                let dateMatch = true;
+                if (startDate || endDate) {
+                    if (!item.D) return false;
+                    const itemDate = new Date(item.D);
+                    const start = startDate ? new Date(startDate) : new Date('1900-01-01');
+                    const end = endDate ? new Date(endDate) : new Date('2100-12-31');
+                    dateMatch = itemDate >= start && itemDate <= end;
+                }
+                
+                // 班组筛选
+                const teamMatch = !filterTeam || item.A === filterTeam;
+                
+                // 锌锭种类筛选
+                const zincTypeMatch = !filterZincType || item.ZincType === filterZincType;
+                
+                return dateMatch && teamMatch && zincTypeMatch;
             });
-            document.getElementById('filterResult').textContent = `筛选结果：${filteredItems.length} 条记录`;
+            
+            // 生成筛选结果描述
+            const filterResult = document.getElementById('filterResult');
+            let resultText = `筛选结果：${filteredItems.length} 条记录`;
+            const conditions = [];
+            if (startDate && endDate) conditions.push(`${startDate} 至 ${endDate}`);
+            else if (startDate) conditions.push(`从 ${startDate} 开始`);
+            else if (endDate) conditions.push(`至 ${endDate}`);
+            if (filterTeam) conditions.push(`班组: ${filterTeam}`);
+            if (filterZincType) conditions.push(`种类: ${filterZincType}`);
+            if (conditions.length > 0) resultText += ` (${conditions.join(', ')})`;
+            filterResult.textContent = resultText;
+            
             currentPage = 1;
             renderTable();
         }
 
-        function clearDateFilter() {
+        // 清除所有筛选
+        function clearFilters() {
             document.getElementById('startDate').value = '';
             document.getElementById('endDate').value = '';
+            document.getElementById('filterTeam').value = '';
+            document.getElementById('filterZincType').value = '';
             document.getElementById('filterResult').textContent = '';
             isFiltering = false;
             filteredItems = [];
             currentPage = 1;
             renderTable();
         }
+        
+        // 兼容旧的函数名
+        function applyDateFilter() { applyFilters(); }
+        function clearDateFilter() { clearFilters(); }
 
         function updatePaginationButtons() {
             const displayItems = isFiltering ? filteredItems : items;
