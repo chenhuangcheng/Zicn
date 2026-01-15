@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GI锌锭出入统计</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Microsoft YaHei', Arial, sans-serif; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); min-height: 100vh; padding: 0; margin: 0; }
+        .main-wrapper { display: flex; min-height: 100vh; }
+        .sidebar { width: 250px; background: white; box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1); display: flex; flex-direction: column; }
+        .sidebar-header { padding: 30px 20px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; }
+        .sidebar-header h2 { font-size: 20px; margin-bottom: 5px; }
+        .sidebar-header p { font-size: 13px; opacity: 0.9; }
+        .sidebar-menu { flex: 1; padding: 20px 0; }
+        .menu-item { padding: 15px 25px; color: #555; cursor: pointer; transition: all 0.3s ease; border-left: 4px solid transparent; display: flex; align-items: center; gap: 12px; font-size: 15px; }
+        .menu-item:hover { background-color: #f5f9ff; color: #4facfe; }
+        .menu-item.active { background-color: #e8f4ff; color: #4facfe; border-left-color: #4facfe; font-weight: 600; }
+        .sub-menu { padding-left: 20px; background-color: #f8f9fa; }
+        .sub-menu .menu-item { padding: 12px 25px; font-size: 14px; }
+        .sub-menu .menu-item.active { background-color: #e8f4ff; }
+        .main-content { flex: 1; display: flex; flex-direction: column; }
+        .container { max-width: 100%; margin: 0; padding: 15px; flex: 1; display: flex; flex-direction: column; }
+        .header { background: white; border-radius: 10px; padding: 12px 20px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { color: #333; font-size: 22px; }
+        .user-info { display: flex; align-items: center; gap: 15px; }
+        .user-name { color: #666; font-size: 14px; }
+        .logout-btn { padding: 8px 16px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.3s ease; }
+        .logout-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(79, 172, 254, 0.4); }
+        .content { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); flex: 1; overflow-y: auto; }
+        .statistics-section { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .statistics-section h3 { color: #333; font-size: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .statistics-controls { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+        .statistics-controls label { color: #555; font-weight: 500; font-size: 13px; }
+        .statistics-controls select { padding: 6px 12px; border: 1px solid #e0e0e0; border-radius: 5px; font-size: 13px; transition: all 0.3s ease; outline: none; cursor: pointer; }
+        .statistics-controls select:focus { border-color: #4facfe; box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1); }
+        .statistics-result { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; }
+        .stat-box { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); }
+        .stat-box.inbound-quantity { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .stat-box.inbound-weight { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+        .stat-box.outbound-quantity { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .stat-box.outbound-weight { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+        .stat-box.remaining-quantity { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .stat-box.remaining-weight { background: linear-gradient(135deg, #f857a6 0%, #ff5858 100%); }
+        .stat-box h4 { font-size: 13px; opacity: 0.9; margin-bottom: 8px; }
+        .stat-box p { font-size: 28px; font-weight: 700; margin: 0; }
+        .stat-box .unit { font-size: 16px; font-weight: 400; margin-left: 4px; }
+    </style>
+</head>
+<body>
+    <div class="main-wrapper">
+        <!-- 左侧菜单栏 -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>锌锭库管理系统</h2>
+                <p>Zinc Ingot Management</p>
+            </div>
+            <div class="sidebar-menu">
+                <div class="menu-item" onclick="toggleSubMenu()" style="cursor: pointer;">
+                    <span>GI锌锭管理</span>
+                    <span id="giArrow" style="margin-left: auto;">▼</span>
+                </div>
+                <div class="sub-menu" id="giSubMenu">
+                    <div class="menu-item" onclick="window.location.href='gi_inbound.html'">
+                        <span>入库管理</span>
+                    </div>
+                    <div class="menu-item" onclick="window.location.href='dashboard.html?menu=gi'">
+                        <span>出库管理</span>
+                    </div>
+                    <div class="menu-item active">
+                        <span>出入统计</span>
+                    </div>
+                </div>
+                <div class="menu-item" onclick="window.location.href='dashboard.html?menu=aluminum'">
+                    <span>高铝锌锭管理</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧主内容区 -->
+        <div class="main-content">
+            <div class="container">
+                <div class="header">
+                    <h1>GI锌锭出入统计</h1>
+                    <div class="user-info">
+                        <span class="user-name">欢迎，<strong id="currentUser">用户</strong></span>
+                        <button class="logout-btn" onclick="logout()">退出登录</button>
+                    </div>
+                </div>
+
+                <div class="content">
+                    <!-- 入库统计 -->
+                    <div class="statistics-section">
+                        <h3>📥 入库统计</h3>
+                        <div class="statistics-controls">
+                            <label for="inboundYear">年份：</label>
+                            <select id="inboundYear" onchange="updateInboundStatistics()"><option value="">全部</option></select>
+                            <label for="inboundMonth">月份：</label>
+                            <select id="inboundMonth" onchange="updateInboundStatistics()">
+                                <option value="">全部</option>
+                                <option value="1">1月</option><option value="2">2月</option><option value="3">3月</option>
+                                <option value="4">4月</option><option value="5">5月</option><option value="6">6月</option>
+                                <option value="7">7月</option><option value="8">8月</option><option value="9">9月</option>
+                                <option value="10">10月</option><option value="11">11月</option><option value="12">12月</option>
+                            </select>
+                            <label for="inboundTeam">班组：</label>
+                            <select id="inboundTeam" onchange="updateInboundStatistics()">
+                                <option value="">全部</option>
+                                <option value="甲">甲</option><option value="乙">乙</option>
+                                <option value="丙">丙</option><option value="丁">丁</option>
+                            </select>
+                            <label for="inboundZincType">锌锭种类：</label>
+                            <select id="inboundZincType" onchange="updateInboundStatistics()">
+                                <option value="">全部</option>
+                                <option value="A">A</option><option value="B">B</option>
+                                <option value="D">D</option><option value="E">E</option>
+                            </select>
+                        </div>
+                        <div class="statistics-result">
+                            <div class="stat-box inbound-quantity"><h4>入库数量</h4><p id="inboundQuantity">0<span class="unit">个</span></p></div>
+                            <div class="stat-box inbound-weight"><h4>入库重量</h4><p id="inboundWeight">0<span class="unit">KG</span></p></div>
+                        </div>
+                    </div>
+
+                    <!-- 出库统计 -->
+                    <div class="statistics-section">
+                        <h3>📤 出库统计</h3>
+                        <div class="statistics-controls">
+                            <label for="outboundYear">年份：</label>
+                            <select id="outboundYear" onchange="updateOutboundStatistics()"><option value="">全部</option></select>
+                            <label for="outboundMonth">月份：</label>
+                            <select id="outboundMonth" onchange="updateOutboundStatistics()">
+                                <option value="">全部</option>
+                                <option value="1">1月</option><option value="2">2月</option><option value="3">3月</option>
+                                <option value="4">4月</option><option value="5">5月</option><option value="6">6月</option>
+                                <option value="7">7月</option><option value="8">8月</option><option value="9">9月</option>
+                                <option value="10">10月</option><option value="11">11月</option><option value="12">12月</option>
+                            </select>
+                            <label for="outboundTeam">班组：</label>
+                            <select id="outboundTeam" onchange="updateOutboundStatistics()">
+                                <option value="">全部</option>
+                                <option value="甲">甲</option><option value="乙">乙</option>
+                                <option value="丙">丙</option><option value="丁">丁</option>
+                            </select>
+                            <label for="outboundZincType">锌锭种类：</label>
+                            <select id="outboundZincType" onchange="updateOutboundStatistics()">
+                                <option value="">全部</option>
+                                <option value="A">A</option><option value="B">B</option>
+                                <option value="D">D</option><option value="E">E</option>
+                            </select>
+                        </div>
+                        <div class="statistics-result">
+                            <div class="stat-box outbound-quantity"><h4>出库数量</h4><p id="outboundQuantity">0<span class="unit">个</span></p></div>
+                            <div class="stat-box outbound-weight"><h4>出库重量</h4><p id="outboundWeight">0<span class="unit">KG</span></p></div>
+                        </div>
+                    </div>
+
+                    <!-- 当前库存统计 -->
+                    <div class="statistics-section">
+                        <h3>📦 当前库存</h3>
+                        <div class="statistics-controls">
+                            <label for="remainingZincType">锌锭种类：</label>
+                            <select id="remainingZincType" onchange="updateRemainingStatistics()">
+                                <option value="">全部</option>
+                                <option value="A">A</option><option value="B">B</option>
+                                <option value="D">D</option><option value="E">E</option>
+                            </select>
+                        </div>
+                        <div class="statistics-result">
+                            <div class="stat-box remaining-quantity"><h4>剩余数量</h4><p id="remainingQuantity">0<span class="unit">个</span></p></div>
+                            <div class="stat-box remaining-weight"><h4>剩余重量</h4><p id="remainingWeight">0<span class="unit">KG</span></p></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== API 配置 ==========
+        const API_URL = 'http://127.0.0.1:5000/api';
+
+        // ========== 页面加载初始化 ==========
+        window.onload = function() {
+            checkLogin();
+            initializeYearOptions();
+            updateInboundStatistics();
+            updateOutboundStatistics();
+            updateRemainingStatistics();
+        };
+
+        function checkLogin() {
+            const currentUser = sessionStorage.getItem('currentUser') || localStorage.getItem('currentUser');
+            if (!currentUser) { alert('请先登录！'); window.location.href = 'login.html'; return; }
+            const user = JSON.parse(currentUser);
+            document.getElementById('currentUser').textContent = user.username;
+        }
+
+        function toggleSubMenu() {
+            const subMenu = document.getElementById('giSubMenu');
+            const arrow = document.getElementById('giArrow');
+            if (subMenu.style.display === 'none') { subMenu.style.display = 'block'; arrow.textContent = '▼'; }
+            else { subMenu.style.display = 'none'; arrow.textContent = '▶'; }
+        }
+
+        function logout() {
+            if (confirm('确定要退出登录吗？')) {
+                sessionStorage.removeItem('currentUser');
+                localStorage.removeItem('currentUser');
+                window.location.href = 'login.html';
+            }
+        }
+
+        // ========== 初始化年份选项 ==========
+        function initializeYearOptions() {
+            const currentYear = new Date().getFullYear();
+            const inboundYearSelect = document.getElementById('inboundYear');
+            const outboundYearSelect = document.getElementById('outboundYear');
+            
+            for (let year = currentYear; year >= currentYear - 10; year--) {
+                const option1 = document.createElement('option');
+                option1.value = year;
+                option1.textContent = year + '年';
+                inboundYearSelect.appendChild(option1);
+                
+                const option2 = document.createElement('option');
+                option2.value = year;
+                option2.textContent = year + '年';
+                outboundYearSelect.appendChild(option2);
+            }
+            
+            inboundYearSelect.value = currentYear;
+            outboundYearSelect.value = currentYear;
+        }
+
+        // ========== 入库统计 ==========
+        async function updateInboundStatistics() {
+            const selectedYear = document.getElementById('inboundYear').value;
+            const selectedMonth = document.getElementById('inboundMonth').value;
+            const selectedTeam = document.getElementById('inboundTeam').value;
+            const selectedZincType = document.getElementById('inboundZincType').value;
+            
+            try {
+                const response = await fetch(`${API_URL}/gi-inbound`);
+                const result = await response.json();
+                
+                if (!result.success) {
+                    console.error('获取入库数据失败');
+                    return;
+                }
+                
+                const data = result.data;
+                let totalQuantity = 0, totalWeight = 0;
+                
+                data.forEach(item => {
+                    // 日期筛选
+                    let dateMatch = true;
+                    if (item.D) {
+                        const itemDate = new Date(item.D);
+                        const itemYear = itemDate.getFullYear();
+                        const itemMonth = itemDate.getMonth() + 1;
+                        
+                        if (selectedYear && itemYear != selectedYear) dateMatch = false;
+                        if (selectedMonth && itemMonth != selectedMonth) dateMatch = false;
+                    }
+                    
+                    // 班组筛选
+                    let teamMatch = !selectedTeam || item.A === selectedTeam;
+                    
+                    // 锌锭种类筛选
+                    let zincTypeMatch = !selectedZincType || item.ZincType === selectedZincType;
+                    
+                    if (dateMatch && teamMatch && zincTypeMatch) {
+                        totalQuantity += parseInt(item.B) || 0;
+                        totalWeight += parseFloat(item.C) || 0;
+                    }
+                });
+                
+                document.getElementById('inboundQuantity').innerHTML = `${totalQuantity}<span class="unit">个</span>`;
+                document.getElementById('inboundWeight').innerHTML = `${totalWeight.toFixed(2)}<span class="unit">KG</span>`;
+            } catch (error) {
+                console.error('加载入库统计失败:', error);
+            }
+        }
+
+        // ========== 出库统计 ==========
+        async function updateOutboundStatistics() {
+            const selectedYear = document.getElementById('outboundYear').value;
+            const selectedMonth = document.getElementById('outboundMonth').value;
+            const selectedTeam = document.getElementById('outboundTeam').value;
+            const selectedZincType = document.getElementById('outboundZincType').value;
+            
+            try {
+                const response = await fetch(`${API_URL}/gi-outbound`);
+                const result = await response.json();
+                
+                if (!result.success) {
+                    console.error('获取出库数据失败');
+                    return;
+                }
+                
+                const data = result.data;
+                let totalQuantity = 0, totalWeight = 0;
+                
+                data.forEach(item => {
+                    // 日期筛选
+                    let dateMatch = true;
+                    if (item.D) {
+                        const itemDate = new Date(item.D);
+                        const itemYear = itemDate.getFullYear();
+                        const itemMonth = itemDate.getMonth() + 1;
+                        
+                        if (selectedYear && itemYear != selectedYear) dateMatch = false;
+                        if (selectedMonth && itemMonth != selectedMonth) dateMatch = false;
+                    }
+                    
+                    // 班组筛选
+                    let teamMatch = !selectedTeam || item.A === selectedTeam;
+                    
+                    // 锌锭种类筛选
+                    let zincTypeMatch = !selectedZincType || item.ZincType === selectedZincType;
+                    
+                    if (dateMatch && teamMatch && zincTypeMatch) {
+                        totalQuantity += parseInt(item.B) || 0;
+                        totalWeight += parseFloat(item.C) || 0;
+                    }
+                });
+                
+                document.getElementById('outboundQuantity').innerHTML = `${totalQuantity}<span class="unit">个</span>`;
+                document.getElementById('outboundWeight').innerHTML = `${totalWeight.toFixed(2)}<span class="unit">KG</span>`;
+            } catch (error) {
+                console.error('加载出库统计失败:', error);
+            }
+        }
+
+        // ========== 当前库存统计 ==========
+        async function updateRemainingStatistics() {
+            const selectedZincType = document.getElementById('remainingZincType').value;
+            
+            try {
+                // 获取入库数据
+                const inboundResponse = await fetch(`${API_URL}/gi-inbound`);
+                const inboundResult = await inboundResponse.json();
+                
+                if (!inboundResult.success) {
+                    console.error('获取入库数据失败');
+                    return;
+                }
+                
+                let inboundQuantity = 0, inboundWeight = 0;
+                inboundResult.data.forEach(item => {
+                    let zincTypeMatch = !selectedZincType || item.ZincType === selectedZincType;
+                    if (zincTypeMatch) {
+                        inboundQuantity += parseInt(item.B) || 0;
+                        inboundWeight += parseFloat(item.C) || 0;
+                    }
+                });
+                
+                // 获取出库数据
+                const outboundResponse = await fetch(`${API_URL}/gi-outbound`);
+                const outboundResult = await outboundResponse.json();
+                
+                if (!outboundResult.success) {
+                    console.error('获取出库数据失败');
+                    return;
+                }
+                
+                let outboundQuantity = 0, outboundWeight = 0;
+                outboundResult.data.forEach(item => {
+                    let zincTypeMatch = !selectedZincType || item.ZincType === selectedZincType;
+                    if (zincTypeMatch) {
+                        outboundQuantity += parseInt(item.B) || 0;
+                        outboundWeight += parseFloat(item.C) || 0;
+                    }
+                });
+                
+                const remainingQuantity = inboundQuantity - outboundQuantity;
+                const remainingWeight = inboundWeight - outboundWeight;
+                
+                document.getElementById('remainingQuantity').innerHTML = `${remainingQuantity}<span class="unit">个</span>`;
+                document.getElementById('remainingWeight').innerHTML = `${remainingWeight.toFixed(2)}<span class="unit">KG</span>`;
+            } catch (error) {
+                console.error('加载库存统计失败:', error);
+            }
+        }
+    </script>
+</body>
+</html>
+

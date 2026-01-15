@@ -7,10 +7,13 @@
 - 🔐 **用户管理**: 注册、登录、密码重置
 - 📦 **入库管理**: GI锌锭入库记录管理
 - 📤 **出库管理**: GI锌锭出库记录管理，支持库存校验
-- 📊 **库存统计**: 实时统计剩余库存数量和重量
+- 📊 **出入统计**: 独立统计页面
+  - 入库统计（按年月/班组/锌锭种类）
+  - 出库统计（按年月/班组/锌锭种类）
+  - 当前库存统计（按锌锭种类）
 - 🔍 **数据筛选**: 按日期、班组、锌锭种类筛选
-- 📈 **统计报表**: 按年月统计入库/出库数量
 - 💾 **数据导出**: 支持导出CSV格式数据
+- 🏭 **高铝锌锭管理**: 独立管理高铝锌锭记录
 
 ## 系统要求
 
@@ -57,9 +60,17 @@ python app.py
 ├── start.bat           # Windows启动脚本
 ├── README.md           # 项目说明文档
 ├── login.html          # 登录/注册页面
-├── dashboard.html      # 主管理界面（出库管理）
+├── dashboard.html      # 主管理界面（出库管理、高铝锌锭管理）
 ├── gi_inbound.html     # GI锌锭入库管理页面
-└── zinc_management.db  # SQLite数据库文件（运行后自动生成）
+├── gi_statistics.html  # GI锌锭出入统计页面
+├── standalone/         # 纯HTML版本（无需后端）
+│   ├── login.html
+│   ├── dashboard.html
+│   ├── gi_inbound.html
+│   ├── gi_statistics.html
+│   └── README.md
+└── instance/
+    └── zinc_management.db  # SQLite数据库文件（运行后自动生成）
 ```
 
 ## API 接口

@@ -130,6 +130,9 @@
                     <div class="menu-item active" onclick="switchMenu('gi')" id="menuGi">
                         <span>出库管理</span>
                     </div>
+                    <div class="menu-item" onclick="window.location.href='gi_statistics.html'" id="menuGiStatistics">
+                        <span>出入统计</span>
+                    </div>
                 </div>
                 <div class="menu-item" onclick="switchMenu('aluminum')" id="menuAluminum">
                     <span>高铝锌锭管理</span>
@@ -149,50 +152,6 @@
                 </div>
 
                 <div class="content">
-                    <!-- 统计功能 -->
-                    <div class="statistics-section">
-                        <h3>📊 出库统计</h3>
-                        <div class="statistics-controls">
-                            <label for="statYear">年份：</label>
-                            <select id="statYear" onchange="updateStatistics()"><option value="">全部</option></select>
-                            <label for="statMonth">月份：</label>
-                            <select id="statMonth" onchange="updateStatistics()">
-                                <option value="">全部</option>
-                                <option value="1">1月</option><option value="2">2月</option><option value="3">3月</option>
-                                <option value="4">4月</option><option value="5">5月</option><option value="6">6月</option>
-                                <option value="7">7月</option><option value="8">8月</option><option value="9">9月</option>
-                                <option value="10">10月</option><option value="11">11月</option><option value="12">12月</option>
-                            </select>
-                            <label for="statTeam">班组：</label>
-                            <select id="statTeam" onchange="updateStatistics()"><option value="">全部</option></select>
-                            <label for="statZincType" id="statZincTypeLabel" style="display: none;">锌锭种类：</label>
-                            <select id="statZincType" onchange="updateStatistics()" style="display: none;">
-                                <option value="">全部</option><option value="A">A</option><option value="B">B</option>
-                                <option value="D">D</option><option value="E">E</option>
-                            </select>
-                        </div>
-                        <div class="statistics-result">
-                            <div class="stat-box quantity"><h4>出库数量</h4><p id="statQuantity">0<span class="unit">个</span></p></div>
-                            <div class="stat-box weight"><h4>出库重量</h4><p id="statWeight">0<span class="unit">KG</span></p></div>
-                        </div>
-                    </div>
-
-                    <!-- 剩余库存统计 -->
-                    <div class="statistics-section" id="remainingSection" style="display: none;">
-                        <h3>📦 当前库存</h3>
-                        <div class="statistics-controls">
-                            <label for="remainingZincType">锌锭种类：</label>
-                            <select id="remainingZincType" onchange="updateRemainingStatistics()">
-                                <option value="">全部</option><option value="A">A</option><option value="B">B</option>
-                                <option value="D">D</option><option value="E">E</option>
-                            </select>
-                        </div>
-                        <div class="statistics-result">
-                            <div class="stat-box remaining"><h4>剩余数量</h4><p id="remainingQuantity">0<span class="unit">个</span></p></div>
-                            <div class="stat-box remaining-weight"><h4>剩余重量</h4><p id="remainingWeight">0<span class="unit">KG</span></p></div>
-                        </div>
-                    </div>
-
                     <!-- 筛选区域 -->
                     <div class="filter-section">
                         <label>筛选条件：</label>
@@ -328,10 +287,7 @@
                 updateTableHeader();
             }
             loadItems();
-            initializeYearOptions();
-            updateTeamOptions();
             updateZincTypeVisibility();
-            updateStatistics();
             renderTable();
         };
 
@@ -346,40 +302,12 @@
             document.getElementById('currentUser').textContent = user.username;
         }
 
-        function initializeYearOptions() {
-            const yearSelect = document.getElementById('statYear');
-            const currentYear = new Date().getFullYear();
-            for (let year = currentYear; year >= currentYear - 10; year--) {
-                const option = document.createElement('option');
-                option.value = year;
-                option.textContent = year + '年';
-                yearSelect.appendChild(option);
-            }
-            yearSelect.value = currentYear;
-        }
-
-        function updateTeamOptions() {
-            const teamSelect = document.getElementById('statTeam');
-            teamSelect.innerHTML = '<option value="">全部</option><option value="甲">甲</option><option value="乙">乙</option><option value="丙">丙</option><option value="丁">丁</option>';
-        }
-
         function updateZincTypeVisibility() {
-            const zincTypeLabel = document.getElementById('statZincTypeLabel');
-            const zincTypeSelect = document.getElementById('statZincType');
-            const remainingSection = document.getElementById('remainingSection');
             const giFilters = document.getElementById('giFilters');
             
             if (currentMenu === 'gi') {
-                zincTypeLabel.style.display = 'inline';
-                zincTypeSelect.style.display = 'inline';
-                remainingSection.style.display = 'block';
                 giFilters.style.display = 'flex';
-                updateRemainingStatistics();
             } else {
-                zincTypeLabel.style.display = 'none';
-                zincTypeSelect.style.display = 'none';
-                zincTypeSelect.value = '';
-                remainingSection.style.display = 'none';
                 giFilters.style.display = 'none';
             }
         }
@@ -392,55 +320,6 @@
             } else {
                 thead.innerHTML = '<tr><th width="50"><input type="checkbox" class="checkbox" id="selectAll" onchange="toggleSelectAll()"></th><th>班组</th><th>消耗数量（个）</th><th>消耗重量（KG）</th><th>消耗时间</th><th>E</th><th>F</th><th>G</th><th width="150">操作</th></tr>';
             }
-        }
-
-        // 更新剩余库存统计（使用localStorage）
-        function updateRemainingStatistics() {
-            if (currentMenu !== 'gi') return;
-            
-            const selectedZincType = document.getElementById('remainingZincType').value;
-            
-            // 获取入库数据
-            let inboundItems = [];
-            const savedInbound = localStorage.getItem('items_gi_inbound');
-            if (savedInbound) {
-                inboundItems = JSON.parse(savedInbound);
-            }
-            
-            // 获取出库数据
-            let outboundItems = [];
-            const savedOutbound = localStorage.getItem('items_gi');
-            if (savedOutbound) {
-                outboundItems = JSON.parse(savedOutbound);
-            }
-            
-            // 计算入库总量
-            let inboundQuantity = 0;
-            let inboundWeight = 0;
-            inboundItems.forEach(item => {
-                let typeMatch = !selectedZincType || item.ZincType === selectedZincType;
-                if (typeMatch) {
-                    inboundQuantity += parseInt(item.B) || 0;
-                    inboundWeight += parseFloat(item.C) || 0;
-                }
-            });
-            
-            // 计算出库总量
-            let outboundQuantity = 0;
-            let outboundWeight = 0;
-            outboundItems.forEach(item => {
-                let typeMatch = !selectedZincType || item.ZincType === selectedZincType;
-                if (typeMatch) {
-                    outboundQuantity += parseInt(item.B) || 0;
-                    outboundWeight += parseFloat(item.C) || 0;
-                }
-            });
-            
-            const remainingQuantity = inboundQuantity - outboundQuantity;
-            const remainingWeight = inboundWeight - outboundWeight;
-            
-            document.getElementById('remainingQuantity').innerHTML = `${remainingQuantity}<span class="unit">个</span>`;
-            document.getElementById('remainingWeight').innerHTML = `${remainingWeight}<span class="unit">KG</span>`;
         }
 
         // 检查库存是否足够
@@ -478,36 +357,6 @@
             return { success: true };
         }
 
-        function updateStatistics() {
-            const selectedYear = document.getElementById('statYear').value;
-            const selectedMonth = document.getElementById('statMonth').value;
-            const selectedTeam = document.getElementById('statTeam').value;
-            const selectedZincType = document.getElementById('statZincType').value;
-            
-            let totalQuantity = 0, totalWeight = 0;
-            items.forEach(item => {
-                let dateMatch = true;
-                if (item.D) {
-                    const itemDate = new Date(item.D);
-                    const itemYear = itemDate.getFullYear();
-                    const itemMonth = itemDate.getMonth() + 1;
-                    let yearMatch = !selectedYear || itemYear == selectedYear;
-                    let monthMatch = !selectedMonth || itemMonth == selectedMonth;
-                    dateMatch = yearMatch && monthMatch;
-                }
-                let teamMatch = !selectedTeam || (item.A && item.A.trim() === selectedTeam);
-                let zincTypeMatch = true;
-                if (currentMenu === 'gi' && selectedZincType) zincTypeMatch = item.ZincType === selectedZincType;
-                
-                if (dateMatch && teamMatch && zincTypeMatch) {
-                    totalQuantity += parseInt(item.B) || 0;
-                    totalWeight += parseFloat(item.C) || 0;
-                }
-            });
-            
-            document.getElementById('statQuantity').innerHTML = `${totalQuantity}<span class="unit">个</span>`;
-            document.getElementById('statWeight').innerHTML = `${totalWeight}<span class="unit">KG</span>`;
-        }
 
         function toggleGiSubMenu() {
             const subMenu = document.getElementById('giSubMenu');
@@ -540,11 +389,7 @@
             
             updateTableHeader();
             loadItems();
-            updateTeamOptions();
             updateZincTypeVisibility();
-            document.getElementById('statTeam').value = '';
-            document.getElementById('statZincType').value = '';
-            updateStatistics();
             currentPage = 1;
             clearDateFilter();
         }
@@ -818,9 +663,6 @@
             });
             
             saveItems();
-            updateTeamOptions();
-            updateStatistics();
-            if (currentMenu === 'gi') updateRemainingStatistics();
             if (isFiltering) applyDateFilter();
             else renderTable();
             closeModal();
@@ -833,9 +675,6 @@
             if (confirm(confirmText)) {
                 items.splice(index, 1);
                 saveItems();
-                updateTeamOptions();
-                updateStatistics();
-                if (currentMenu === 'gi') updateRemainingStatistics();
                 if (isFiltering) applyDateFilter();
                 else renderTable();
             }
@@ -851,9 +690,6 @@
             if (confirm(currentMenu === 'gi' ? `确定要删除选中的 ${selectedCount} 条出库记录吗？` : `确定要删除选中的 ${selectedCount} 条锌锭记录吗？`)) {
                 items = items.filter(item => !item.selected);
                 saveItems();
-                updateTeamOptions();
-                updateStatistics();
-                if (currentMenu === 'gi') updateRemainingStatistics();
                 if (isFiltering) applyDateFilter();
                 else renderTable();
             }

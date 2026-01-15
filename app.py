@@ -52,7 +52,7 @@ class GiInbound(db.Model):
     """GI锌锭入库记录表"""
     id = db.Column(db.Integer, primary_key=True)
     team = db.Column(db.String(10), nullable=False)  # 班组：甲、乙、丙、丁
-    zinc_type = db.Column(db.String(10), nullable=False)  # 锌锭种类：A、B、C、D
+    zinc_type = db.Column(db.String(10), nullable=False)  # 锌锭种类：A、B、D、E
     quantity = db.Column(db.Integer, nullable=False)  # 入库数量
     weight = db.Column(db.Float, nullable=False)  # 入库重量(KG)
     date = db.Column(db.DateTime, nullable=False)  # 入库时间

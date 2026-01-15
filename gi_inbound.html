@@ -687,6 +687,9 @@
                     <div class="menu-item" onclick="window.location.href='dashboard.html?menu=gi'">
                         <span>出库管理</span>
                     </div>
+                    <div class="menu-item" onclick="window.location.href='gi_statistics.html'">
+                        <span>出入统计</span>
+                    </div>
                 </div>
                 <!-- 高铝锌锭管理 -->
                 <div class="menu-item" onclick="window.location.href='dashboard.html?menu=aluminum'">
@@ -709,59 +712,6 @@
 
                 <!-- 主内容区域 -->
                 <div class="content">
-                    <!-- 统计功能 -->
-                    <div class="statistics-section">
-                        <h3>📊 入库统计</h3>
-                        <div class="statistics-controls">
-                            <label for="statYear">年份：</label>
-                            <select id="statYear" onchange="updateStatistics()">
-                                <option value="">全部</option>
-                            </select>
-                            <label for="statMonth">月份：</label>
-                            <select id="statMonth" onchange="updateStatistics()">
-                                <option value="">全部</option>
-                                <option value="1">1月</option>
-                                <option value="2">2月</option>
-                                <option value="3">3月</option>
-                                <option value="4">4月</option>
-                                <option value="5">5月</option>
-                                <option value="6">6月</option>
-                                <option value="7">7月</option>
-                                <option value="8">8月</option>
-                                <option value="9">9月</option>
-                                <option value="10">10月</option>
-                                <option value="11">11月</option>
-                                <option value="12">12月</option>
-                            </select>
-                            <label for="statTeam">班组：</label>
-                            <select id="statTeam" onchange="updateStatistics()">
-                                <option value="">全部</option>
-                                <option value="甲">甲</option>
-                                <option value="乙">乙</option>
-                                <option value="丙">丙</option>
-                                <option value="丁">丁</option>
-                            </select>
-                            <label for="statZincType">锌锭种类：</label>
-                            <select id="statZincType" onchange="updateStatistics()">
-                                <option value="">全部</option>
-                                <option value="A">A</option>
-                                <option value="B">B</option>
-                                <option value="D">D</option>
-                                <option value="E">E</option>
-                            </select>
-                        </div>
-                        <div class="statistics-result">
-                            <div class="stat-box quantity">
-                                <h4>入库数量</h4>
-                                <p id="statQuantity">0<span class="unit">个</span></p>
-                            </div>
-                            <div class="stat-box weight">
-                                <h4>入库重量</h4>
-                                <p id="statWeight">0<span class="unit">KG</span></p>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- 筛选区域 -->
                     <div class="filter-section">
                         <label>筛选条件：</label>
@@ -933,8 +883,6 @@
         window.onload = async function() {
             checkLogin();
             await loadItems();
-            initializeYearOptions();
-            updateStatistics();
             renderTable();
         };
 
@@ -999,58 +947,6 @@
             // API模式下每次操作都直接调用对应的API
         }
 
-        // ========== 年份选项初始化 ==========
-        function initializeYearOptions() {
-            const yearSelect = document.getElementById('statYear');
-            const currentYear = new Date().getFullYear();
-            
-            for (let year = currentYear; year >= currentYear - 10; year--) {
-                const option = document.createElement('option');
-                option.value = year;
-                option.textContent = year + '年';
-                yearSelect.appendChild(option);
-            }
-            
-            yearSelect.value = currentYear;
-        }
-
-        // ========== 统计功能 ==========
-        function updateStatistics() {
-            const selectedYear = document.getElementById('statYear').value;
-            const selectedMonth = document.getElementById('statMonth').value;
-            const selectedTeam = document.getElementById('statTeam').value;
-            const selectedZincType = document.getElementById('statZincType').value;
-            
-            let totalQuantity = 0;
-            let totalWeight = 0;
-            
-            items.forEach(item => {
-                let dateMatch = true;
-                if (item.D) {
-                    const itemDate = new Date(item.D);
-                    const itemYear = itemDate.getFullYear();
-                    const itemMonth = itemDate.getMonth() + 1;
-                    
-                    let yearMatch = !selectedYear || itemYear == selectedYear;
-                    let monthMatch = !selectedMonth || itemMonth == selectedMonth;
-                    dateMatch = yearMatch && monthMatch;
-                }
-                
-                let teamMatch = !selectedTeam || (item.A && item.A.trim() === selectedTeam);
-                let zincTypeMatch = !selectedZincType || item.ZincType === selectedZincType;
-                
-                if (dateMatch && teamMatch && zincTypeMatch) {
-                    const quantity = parseInt(item.B) || 0;
-                    totalQuantity += quantity;
-                    
-                    const weight = parseFloat(item.C) || 0;
-                    totalWeight += weight;
-                }
-            });
-            
-            document.getElementById('statQuantity').innerHTML = `${totalQuantity}<span class="unit">个</span>`;
-            document.getElementById('statWeight').innerHTML = `${totalWeight}<span class="unit">KG</span>`;
-        }
 
         // ========== 综合筛选 ==========
         // 应用综合筛选（日期、班组、锌锭种类）
@@ -1338,7 +1234,6 @@
                 
                 // 重新加载数据
                 await loadItems();
-                updateStatistics();
                 
                 if (isFiltering) {
                     applyDateFilter();
@@ -1373,7 +1268,6 @@
                     
                     // 重新加载数据
                     await loadItems();
-                    updateStatistics();
                     
                     if (isFiltering) {
                         applyDateFilter();
@@ -1428,7 +1322,6 @@
                     
                     // 重新加载数据
                     await loadItems();
-                    updateStatistics();
                     
                     if (isFiltering) {
                         applyDateFilter();
